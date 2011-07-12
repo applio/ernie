@@ -175,38 +175,37 @@ receive_term(Request, State) ->
   case gen_tcp:recv(Sock, 0) of
     {ok, BinaryTerm} ->
       logger:debug("Got binary term: ~p~n", [BinaryTerm]),
-      case (size(BinaryTerm) rem 2) of
-      1 ->
-        % Triggered in the past by bert (1.1.2) being used with ruby 1.9.2 to
-        % produce an unintended message due to internal ruby encoding defaults.
-        logger:error("Bad inbound message length ~p~n", [size(BinaryTerm)]),
-        Class = <<"ServerError">>,
-        Message = list_to_binary(
-                      io_lib:format(
-                          "Improper inbound message length ~p~n",
-                          [size(BinaryTerm)])),
-        gen_tcp:send(Sock,
-                     term_to_binary(
-                         {error, [server, 0, Class, Message, []]})
-                    ),
-        ok = gen_tcp:close(Sock);
-      0 ->
-        Term = binary_to_term(BinaryTerm),
-        logger:info("Got term: ~p~n", [Term]),
-        case Term of
-          {call, '__admin__', Fun, Args} ->
-            ernie_admin:process(Sock, Fun, Args, State);
-          {info, Command, Args} ->
-            Infos = Request#request.infos,
-            Infos2 = [BinaryTerm | Infos],
-            Request2 = Request#request{infos = Infos2},
-            Request3 = process_info(Request2, Command, Args),
-            receive_term(Request3, State);
-          _Any ->
-            Request2 = Request#request{action = BinaryTerm},
-            close_if_cast(Term, Request2),
-            ernie_server:enqueue_request(Request2),
-            ernie_server:kick()
+      case (catch binary_to_term(BinaryTerm)) of
+        {'EXIT', {Reason, Stack}} ->
+          % Triggered in the past by bert (1.1.2) being used with ruby 1.9.2 to
+          % produce unintended message due to internal ruby encoding defaults.
+          logger:error("Bad inbound message: ~p~n~p~n", [Reason, Stack]),
+          Class = <<"ServerError">>,
+          Message = list_to_binary(
+                        io_lib:format(
+                            "Improper inbound message: ~p~n",
+                            [Reason])),
+          gen_tcp:send(Sock,
+                       term_to_binary(
+                           {error, [server, 0, Class, Message, []]})
+                      ),
+          ok = gen_tcp:close(Sock);
+        Term ->
+          logger:info("Got term: ~p~n", [Term]),
+          case Term of
+            {call, '__admin__', Fun, Args} ->
+              ernie_admin:process(Sock, Fun, Args, State);
+            {info, Command, Args} ->
+              Infos = Request#request.infos,
+              Infos2 = [BinaryTerm | Infos],
+              Request2 = Request#request{infos = Infos2},
+              Request3 = process_info(Request2, Command, Args),
+              receive_term(Request3, State);
+            _Any ->
+              Request2 = Request#request{action = BinaryTerm},
+              close_if_cast(Term, Request2),
+              ernie_server:enqueue_request(Request2),
+              ernie_server:kick()
         end
       end;
     {error, closed} ->

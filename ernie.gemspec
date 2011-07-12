@@ -4,8 +4,8 @@ Gem::Specification.new do |s|
   s.rubygems_version = '1.3.6'
 
   s.name              = 'ernie'
-  s.version           = '2.5.2'
-  s.date              = '2010-11-23'
+  s.version           = '2.5.3'
+  s.date              = '2011-07-12'
   s.rubyforge_project = 'ernie'
 
   s.summary     = "Ernie is a BERT-RPC server implementation."
@@ -25,8 +25,8 @@ Gem::Specification.new do |s|
   s.rdoc_options = ["--charset=UTF-8"]
   s.extra_rdoc_files = %w[LICENSE README.md]
 
-  s.add_dependency('bert', [">= 1.1.0"])
-  s.add_dependency('bertrpc', [">= 1.0.0"])
+  s.add_dependency('bert', [">= 1.1.3"])
+  s.add_dependency('bertrpc', [">= 1.3.0"])
 
   s.add_development_dependency('shoulda', [">= 2.11.3", "< 3.0.0"])
 
