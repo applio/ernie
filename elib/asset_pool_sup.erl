@@ -8,6 +8,6 @@ start_link(Handler, Number) ->
 init([Handler, Number]) ->
   io:format("Using handler ~p~n", [Handler]),
   io:format("Using ~p handler instances~n", [Number]),
-  {ok, {{one_for_one, 1, 60},
+  {ok, {{one_for_one, 25, 60},
     [{asset_pool, {asset_pool, start_link, [Handler, Number]},
     permanent, brutal_kill, worker, [asset_pool]}]}}.
