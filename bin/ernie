@@ -32,7 +32,8 @@ Commands:
   reload-handlers       Gracefully reload all of the the ruby handlers
                         and use the new code for all subsequent requests.
   stats                 Print usage statistics.
-  halt                  Gracefully halt the server.
+  halt                  Immediately halt the server.
+  shutdown              Gracefully halt the server.
 
 Options:
 HELP
@@ -80,11 +81,12 @@ OptionParser.new do |opts|
 end.parse!
 
 if command = ARGV[0]
-  if !%w{reload-handlers stats halt}.include?(command)
+  if !%w{reload-handlers stats halt shutdown}.include?(command)
     puts "Invlalid command. Valid commands are:"
     puts "  reload-handlers"
     puts "  stats"
     puts "  halt"
+    puts "  shutdown"
     exit(1)
   end
 

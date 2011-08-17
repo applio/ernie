@@ -11,6 +11,9 @@ process(Sock, reload_handlers, _Args, State) ->
 process(Sock, halt, _Args, State) ->
   process_halt(Sock, State),
   State#state{listen = false};
+process(Sock, shutdown, _Args, State) ->
+  process_shutdown(Sock, State),
+  State#state{listen = false};
 process(Sock, stats, _Args, State) ->
   spawn(fun() -> process_stats(Sock, State) end),
   State;
@@ -41,6 +44,18 @@ process_halt(Sock, State) ->
   gen_tcp:close(State#state.lsock),
   case State#state.count =:= State#state.zcount of
     true -> halt();
+    false -> ok
+  end.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Shutdown
+
+process_shutdown(Sock, State) ->
+  gen_tcp:send(Sock, term_to_binary({reply, <<"Shutting down.">>})),
+  ok = gen_tcp:close(Sock),
+  gen_tcp:close(State#state.lsock),
+  case State#state.count =:= State#state.zcount of
+    true -> init:stop();
     false -> ok
   end.
 
